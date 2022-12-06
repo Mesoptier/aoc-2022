@@ -1,18 +1,8 @@
 use std::collections::VecDeque;
 
-use itertools::Itertools;
-
-pub fn part_one(input: &str) -> Option<usize> {
-    input
-        .chars()
-        .tuple_windows()
-        .find_position(|(a, b, c, d)| a != b && a != c && a != d && b != c && b != d && c != d)
-        .map(|(position, _)| position + 4)
-}
-
-pub fn part_two(input: &str) -> Option<usize> {
+fn solve(input: &str, marker_len: usize) -> Option<usize> {
     let input = input.as_bytes();
-    let (input_head, input_tail) = input.split_at(14);
+    let (input_head, input_tail) = input.split_at(marker_len);
 
     let mut buffer = VecDeque::from_iter(input_head);
     let mut counts = [0; 26];
@@ -28,7 +18,7 @@ pub fn part_two(input: &str) -> Option<usize> {
 
     for (position, new_char) in input_tail.into_iter().enumerate() {
         if duplicates_in_buffer == 0 {
-            return Some(position + 14);
+            return Some(position + marker_len);
         }
 
         let old_char = buffer.pop_front().unwrap();
@@ -47,7 +37,15 @@ pub fn part_two(input: &str) -> Option<usize> {
         }
     }
 
-    unreachable!()
+    None
+}
+
+pub fn part_one(input: &str) -> Option<usize> {
+    solve(input, 4)
+}
+
+pub fn part_two(input: &str) -> Option<usize> {
+    solve(input, 14)
 }
 
 fn main() {

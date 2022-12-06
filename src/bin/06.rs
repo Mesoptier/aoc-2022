@@ -1,6 +1,5 @@
 fn solve(input: &str, marker_len: usize) -> Option<usize> {
     let input = input.as_bytes();
-    let (input_head, input_tail) = input.split_at(marker_len);
 
     // Map from character index ('a'=0, 'b'=1, ..., 'z'=25) to the number of
     // occurences in the last `marker_len` characters.
@@ -8,7 +7,8 @@ fn solve(input: &str, marker_len: usize) -> Option<usize> {
     // Number of duplicates in the last `marker_len` characters.
     let mut duplicates = 0;
 
-    for c in input_head {
+    // Initalize `counts` and `duplicates`
+    for c in &input[0..marker_len] {
         let idx = (*c as usize) - ('a' as usize);
         counts[idx] += 1;
         if counts[idx] >= 2 {
@@ -16,22 +16,23 @@ fn solve(input: &str, marker_len: usize) -> Option<usize> {
         }
     }
 
-    for (position, &new_char) in input_tail.into_iter().enumerate() {
+    // Process remainder of the input stream
+    for pos in marker_len..input.len() {
         if duplicates == 0 {
-            return Some(position + marker_len);
+            return Some(pos);
         }
 
-        let old_char = input[position];
-
-        let old_char_idx = (old_char as usize) - ('a' as usize);
-        counts[old_char_idx] -= 1;
-        if counts[old_char_idx] >= 1 {
+        let old = input[pos - marker_len];
+        let old_idx = (old as usize) - ('a' as usize);
+        counts[old_idx] -= 1;
+        if counts[old_idx] >= 1 {
             duplicates -= 1;
         }
 
-        let new_char_idx = (new_char as usize) - ('a' as usize);
-        counts[new_char_idx] += 1;
-        if counts[new_char_idx] >= 2 {
+        let new = input[pos];
+        let new_idx = (new as usize) - ('a' as usize);
+        counts[new_idx] += 1;
+        if counts[new_idx] >= 2 {
             duplicates += 1;
         }
     }

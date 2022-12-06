@@ -15,13 +15,22 @@ pub fn part_two(input: &str) -> Option<usize> {
     let (input_head, input_tail) = input.split_at(14);
 
     let mut buffer = VecDeque::from_iter(input_head);
+
     let mut duplicates_in_buffer: usize = {
-        input_head
-            .into_iter()
-            .counts()
-            .into_values()
-            .map(|count| count - 1)
-            .sum()
+        let mut counts = [0; 26];
+
+        for c in input_head {
+            let i = c - ('a' as u8);
+            counts[i as usize] += 1;
+        }
+
+        counts.into_iter().fold(0, |sum, n| {
+            if n == 0 {
+                sum
+            } else {
+                sum + n - 1
+            }
+        })
     };
 
     for (position, new_char) in input_tail.into_iter().enumerate() {

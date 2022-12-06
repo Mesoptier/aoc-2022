@@ -15,23 +15,16 @@ pub fn part_two(input: &str) -> Option<usize> {
     let (input_head, input_tail) = input.split_at(14);
 
     let mut buffer = VecDeque::from_iter(input_head);
+    let mut counts = [0; 26];
+    let mut duplicates_in_buffer = 0;
 
-    let mut duplicates_in_buffer: usize = {
-        let mut counts = [0; 26];
-
-        for c in input_head {
-            let i = c - ('a' as u8);
-            counts[i as usize] += 1;
+    for c in input_head {
+        let idx = (*c as usize) - ('a' as usize);
+        counts[idx] += 1;
+        if counts[idx] >= 2 {
+            duplicates_in_buffer += 1;
         }
-
-        counts.into_iter().fold(0, |sum, n| {
-            if n == 0 {
-                sum
-            } else {
-                sum + n - 1
-            }
-        })
-    };
+    }
 
     for (position, new_char) in input_tail.into_iter().enumerate() {
         if duplicates_in_buffer == 0 {
@@ -39,18 +32,19 @@ pub fn part_two(input: &str) -> Option<usize> {
         }
 
         let old_char = buffer.pop_front().unwrap();
+        buffer.push_back(new_char);
 
-        // Number of duplicates in buffer only changes if old_char and new_char are not the same
-        if old_char != new_char {
-            if buffer.contains(&old_char) {
-                duplicates_in_buffer -= 1;
-            }
-            if buffer.contains(&new_char) {
-                duplicates_in_buffer += 1;
-            }
+        let old_char_idx = (*old_char as usize) - ('a' as usize);
+        counts[old_char_idx] -= 1;
+        if counts[old_char_idx] >= 1 {
+            duplicates_in_buffer -= 1;
         }
 
-        buffer.push_back(new_char);
+        let new_char_idx = (*new_char as usize) - ('a' as usize);
+        counts[new_char_idx] += 1;
+        if counts[new_char_idx] >= 2 {
+            duplicates_in_buffer += 1;
+        }
     }
 
     unreachable!()

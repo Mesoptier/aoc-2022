@@ -1,38 +1,8 @@
-use std::{
-    cell::RefCell,
-    collections::{BinaryHeap, HashMap},
-    rc::Rc,
-};
+fn process_input(input: &str) -> Vec<usize> {
+    // ASSUMPTION: We never revisit a directory after leaving it.
 
-use nom::{
-    branch::alt,
-    bytes::complete::tag,
-    character::complete::digit1,
-    combinator::{map, map_res, rest},
-    sequence::separated_pair,
-    IResult,
-};
-
-#[derive(Debug)]
-enum Node {
-    File(usize),
-    Directory(Rc<RefCell<HashMap<String, Node>>>),
-}
-
-fn parse_node(input: &str) -> IResult<&str, (Node, String)> {
-    separated_pair(
-        alt((
-            map(tag("dir"), |_| Node::Directory(Rc::default())),
-            map(map_res(digit1, str::parse::<usize>), Node::File),
-        )),
-        tag(" "),
-        map(rest, String::from),
-    )(input)
-}
-
-fn process_input(input: &str) -> HashMap<String, Node> {
-    let root_nodes = Rc::new(RefCell::new(HashMap::<String, Node>::new()));
-    let mut stack = vec![root_nodes.clone()];
+    let mut sizes = vec![];
+    let mut stack = vec![0];
 
     for line in input.lines() {
         const CD_PREFIX: &'static str = "$ cd ";
@@ -43,19 +13,19 @@ fn process_input(input: &str) -> HashMap<String, Node> {
             let arg = &line[CD_PREFIX.len()..];
             match arg {
                 "/" => {
-                    stack.truncate(1);
+                    while stack.len() > 1 {
+                        let size = stack.pop().unwrap();
+                        sizes.push(size);
+                        *stack.last_mut().unwrap() += size;
+                    }
                 }
                 ".." => {
-                    stack.pop();
+                    let size = stack.pop().unwrap();
+                    sizes.push(size);
+                    *stack.last_mut().unwrap() += size;
                 }
-                dir_name => {
-                    let cur_dir_ptr = stack.last().unwrap().clone();
-                    let cur_dir = cur_dir_ptr.borrow();
-                    let dir_node = cur_dir.get(dir_name).unwrap();
-
-                    if let Node::Directory(dir) = dir_node {
-                        stack.push(dir.clone());
-                    }
+                _dir_name => {
+                    stack.push(0);
                 }
             }
         } else if line.starts_with(LS_PREFIX) {
@@ -63,69 +33,36 @@ fn process_input(input: &str) -> HashMap<String, Node> {
             continue;
         } else {
             // `ls` output
-            let (_, (node, name)) = parse_node(line).unwrap();
-            let cur_dir = stack.last().unwrap();
-            cur_dir.borrow_mut().insert(name, node);
+            if !line.starts_with("dir") {
+                let num_len = line.find(' ').unwrap();
+                let size = line[..num_len].parse::<usize>().unwrap();
+                *stack.last_mut().unwrap() += size;
+            }
         }
     }
 
-    stack.clear();
-    Rc::try_unwrap(root_nodes).unwrap().into_inner()
+    // Clean up sizes left on the stack
+    while stack.len() > 1 {
+        let size = stack.pop().unwrap();
+        sizes.push(size);
+        *stack.last_mut().unwrap() += size;
+    }
+    sizes.push(stack[0]);
+
+    sizes
 }
 
 pub fn part_one(input: &str) -> Option<usize> {
-    fn process_nodes(nodes: &HashMap<String, Node>) -> (usize, usize) {
-        let (result, dir_size) =
-            nodes
-                .values()
-                .fold((0, 0), |(result, dir_size), node| match node {
-                    Node::File(file_size) => (result, dir_size + file_size),
-                    Node::Directory(child_nodes) => {
-                        let (child_result, child_dir_size) = process_nodes(&child_nodes.borrow());
-                        (result + child_result, dir_size + child_dir_size)
-                    }
-                });
-
-        if dir_size <= 100000 {
-            (result + dir_size, dir_size)
-        } else {
-            (result, dir_size)
-        }
-    }
-
-    let root_nodes = process_input(input);
-    let (result, _) = process_nodes(&root_nodes);
+    let sizes = process_input(input);
+    let result = sizes.into_iter().filter(|size| *size <= 100_000).sum();
     Some(result)
 }
 
 pub fn part_two(input: &str) -> Option<usize> {
-    fn compute_directory_size(
-        nodes: &HashMap<String, Node>,
-        sizes: &mut BinaryHeap<usize>,
-    ) -> usize {
-        let dir_size = nodes
-            .values()
-            .map(|node| match node {
-                Node::File(file_size) => *file_size,
-                Node::Directory(child_nodes) => {
-                    compute_directory_size(&child_nodes.borrow(), sizes)
-                }
-            })
-            .sum();
-
-        sizes.push(dir_size);
-        dir_size
-    }
-
-    let root_nodes = process_input(input);
-
-    let mut sizes = BinaryHeap::new();
-    let dir_used_size = compute_directory_size(&root_nodes, &mut sizes);
-    let min_delete_size = dir_used_size - (70_000_000 - 30_000_000);
-
-    let sizes = sizes.into_sorted_vec();
-    let idx = sizes.partition_point(|dir_size| *dir_size <= min_delete_size);
-    Some(sizes[idx])
+    let sizes = process_input(input);
+    let root_size = sizes.last().unwrap();
+    let target_size = root_size - (70_000_000 - 30_000_000);
+    sizes.into_iter().filter(|size| *size >= target_size).min()
 }
 
 fn main() {

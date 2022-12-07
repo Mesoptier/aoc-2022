@@ -1,3 +1,9 @@
+use nom::{character::complete::digit1, combinator::map_res, IResult};
+
+fn parse_size_prefix(input: &str) -> IResult<&str, usize> {
+    map_res(digit1, str::parse::<usize>)(input)
+}
+
 fn process_input(input: &str) -> Vec<usize> {
     // ASSUMPTION: We never revisit a directory after leaving it.
 
@@ -5,12 +11,8 @@ fn process_input(input: &str) -> Vec<usize> {
     let mut stack = vec![0];
 
     for line in input.lines() {
-        const CD_PREFIX: &'static str = "$ cd ";
-        const LS_PREFIX: &'static str = "$ ls";
-
-        if line.starts_with(CD_PREFIX) {
+        if let Some(arg) = line.strip_prefix("$ cd ") {
             // `cd` command
-            let arg = &line[CD_PREFIX.len()..];
             match arg {
                 "/" => {
                     while stack.len() > 1 {
@@ -24,21 +26,15 @@ fn process_input(input: &str) -> Vec<usize> {
                     sizes.push(size);
                     *stack.last_mut().unwrap() += size;
                 }
-                _dir_name => {
+                _ => {
                     stack.push(0);
                 }
             }
-        } else if line.starts_with(LS_PREFIX) {
-            // `ls` command
-            continue;
-        } else {
-            // `ls` output
-            if !line.starts_with("dir") {
-                let num_len = line.find(' ').unwrap();
-                let size = line[..num_len].parse::<usize>().unwrap();
-                *stack.last_mut().unwrap() += size;
-            }
+        } else if let Ok((_, size)) = parse_size_prefix(line) {
+            // `ls` file output
+            *stack.last_mut().unwrap() += size;
         }
+        // `ls` command and `ls` dir output are ignored
     }
 
     // Clean up sizes left on the stack

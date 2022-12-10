@@ -52,7 +52,7 @@ pub fn part_one(input: &str) -> Option<i32> {
         }
 
         match instruction {
-            Instruction::Noop => {},
+            Instruction::Noop => {}
             Instruction::AddX(v) => x += v,
         }
     }
@@ -60,8 +60,42 @@ pub fn part_one(input: &str) -> Option<i32> {
     Some(total_signal_strength)
 }
 
-pub fn part_two(input: &str) -> Option<u32> {
-    None
+pub fn part_two(input: &str) -> Option<String> {
+    let instructions = input.lines().map(|line| parse_instruction(line).unwrap().1);
+
+    let mut cycle = 0;
+    let mut sprite_x = 1;
+
+    let mut screen = String::new();
+
+    for instruction in instructions {
+        let duration = match instruction {
+            Instruction::Noop => 1,
+            Instruction::AddX(_) => 2,
+        };
+
+        for _ in 0..duration {
+            let screen_x = cycle % 40;
+            if sprite_x - 1 <= screen_x && screen_x <= sprite_x + 1 {
+                screen.push('#');
+            } else {
+                screen.push('.');
+            }
+
+            cycle += 1;
+
+            if cycle != 0 && cycle % 40 == 0 {
+                screen.push('\n');
+            }
+        }
+
+        match instruction {
+            Instruction::Noop => {}
+            Instruction::AddX(v) => sprite_x += v,
+        }
+    }
+
+    Some(screen)
 }
 
 fn main() {
@@ -83,6 +117,17 @@ mod tests {
     #[test]
     fn test_part_two() {
         let input = advent_of_code::read_file("examples", 10);
-        assert_eq!(part_two(&input), None);
+        assert_eq!(
+            part_two(&input),
+            Some(
+                "##..##..##..##..##..##..##..##..##..##..\n\
+                 ###...###...###...###...###...###...###.\n\
+                 ####....####....####....####....####....\n\
+                 #####.....#####.....#####.....#####.....\n\
+                 ######......######......######......####\n\
+                 #######.......#######.......#######.....\n"
+                    .to_string()
+            )
+        );
     }
 }

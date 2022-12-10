@@ -1,3 +1,4 @@
+use itertools::FoldWhile::{Continue, Done};
 use itertools::Itertools;
 
 pub fn part_one(input: &str) -> Option<u32> {
@@ -106,8 +107,77 @@ pub fn part_one(input: &str) -> Option<u32> {
     Some(visible_trees)
 }
 
-pub fn part_two(input: &str) -> Option<u32> {
-    None
+pub fn part_two(input: &str) -> Option<usize> {
+    let trees = input
+        .lines()
+        .map(|line| line.chars().map(|c| c.to_digit(10).unwrap()).collect_vec())
+        .collect_vec();
+
+    let width = trees[0].len();
+    let height = trees.len();
+
+    let mut max_scenic_score = 0;
+
+    for y in 0..height {
+        for x in 0..width {
+            let tree_height = trees[y][x];
+            let mut scenic_score = 1;
+
+            // Looking up
+            scenic_score *= (0..y)
+                .rev()
+                .map(|ny| trees[ny][x])
+                .fold_while(0, |view_distance, other_tree_height| {
+                    if other_tree_height >= tree_height {
+                        Done(view_distance + 1)
+                    } else {
+                        Continue(view_distance + 1)
+                    }
+                })
+                .into_inner();
+
+            // Looking down
+            scenic_score *= ((y + 1)..height)
+                .map(|ny| trees[ny][x])
+                .fold_while(0, |view_distance, other_tree_height| {
+                    if other_tree_height >= tree_height {
+                        Done(view_distance + 1)
+                    } else {
+                        Continue(view_distance + 1)
+                    }
+                })
+                .into_inner();
+
+            // Looking left
+            scenic_score *= (0..x)
+                .rev()
+                .map(|nx| trees[y][nx])
+                .fold_while(0, |view_distance, other_tree_height| {
+                    if other_tree_height >= tree_height {
+                        Done(view_distance + 1)
+                    } else {
+                        Continue(view_distance + 1)
+                    }
+                })
+                .into_inner();
+
+            // Looking right
+            scenic_score *= ((x + 1)..width)
+                .map(|nx| trees[y][nx])
+                .fold_while(0, |view_distance, other_tree_height| {
+                    if other_tree_height >= tree_height {
+                        Done(view_distance + 1)
+                    } else {
+                        Continue(view_distance + 1)
+                    }
+                })
+                .into_inner();
+
+            max_scenic_score = max_scenic_score.max(scenic_score);
+        }
+    }
+
+    Some(max_scenic_score)
 }
 
 fn main() {
@@ -129,6 +199,6 @@ mod tests {
     #[test]
     fn test_part_two() {
         let input = advent_of_code::read_file("examples", 8);
-        assert_eq!(part_two(&input), None);
+        assert_eq!(part_two(&input), Some(8));
     }
 }

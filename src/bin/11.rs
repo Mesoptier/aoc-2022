@@ -12,17 +12,17 @@ use nom::{
 
 #[derive(Debug)]
 struct Monkey {
-    starting_items: Vec<u32>,
+    starting_items: Vec<usize>,
     operation: Operation,
-    test_divisible_by: u32,
-    if_true: u32,
-    if_false: u32,
+    test_divisible_by: usize,
+    if_true: usize,
+    if_false: usize,
 }
 
 #[derive(Clone, Copy, Debug)]
 enum Operation {
-    Add(u32),
-    Mult(u32),
+    Add(usize),
+    Mult(usize),
     Square,
 }
 
@@ -34,18 +34,18 @@ fn parse_monkey(input: &str) -> IResult<&str, Monkey> {
     let (input, _) = tuple((tag("Monkey "), digit1, tag(":"), line_ending))(input)?;
     let (input, starting_items) = delimited(
         tag("  Starting items: "),
-        separated_list0(tag(", "), map_res(digit1, str::parse::<u32>)),
+        separated_list0(tag(", "), map_res(digit1, str::parse::<usize>)),
         line_ending,
     )(input)?;
     let (input, operation) = delimited(
         tag("  Operation: new = old "),
         alt((
             map(
-                preceded(tag("+ "), map_res(digit1, str::parse::<u32>)),
+                preceded(tag("+ "), map_res(digit1, str::parse::<usize>)),
                 Operation::Add,
             ),
             map(
-                preceded(tag("* "), map_res(digit1, str::parse::<u32>)),
+                preceded(tag("* "), map_res(digit1, str::parse::<usize>)),
                 Operation::Mult,
             ),
             value(Operation::Square, tag("* old")),
@@ -54,17 +54,17 @@ fn parse_monkey(input: &str) -> IResult<&str, Monkey> {
     )(input)?;
     let (input, test_divisible_by) = delimited(
         tag("  Test: divisible by "),
-        map_res(digit1, str::parse::<u32>),
+        map_res(digit1, str::parse::<usize>),
         line_ending,
     )(input)?;
     let (input, if_true) = delimited(
         tag("    If true: throw to monkey "),
-        map_res(digit1, str::parse::<u32>),
+        map_res(digit1, str::parse::<usize>),
         line_ending,
     )(input)?;
     let (input, if_false) = preceded(
         tag("    If false: throw to monkey "),
-        map_res(digit1, str::parse::<u32>),
+        map_res(digit1, str::parse::<usize>),
     )(input)?;
 
     Ok((
@@ -79,7 +79,7 @@ fn parse_monkey(input: &str) -> IResult<&str, Monkey> {
     ))
 }
 
-pub fn part_one(input: &str) -> Option<u32> {
+fn solve(input: &str, num_rounds: usize, divisor: usize) -> Option<usize> {
     let (_, monkeys) = parse_input(input).unwrap();
 
     let mut monkeys_items = monkeys
@@ -87,9 +87,11 @@ pub fn part_one(input: &str) -> Option<u32> {
         .map(|m| VecDeque::from_iter(m.starting_items.iter().cloned()))
         .collect::<Vec<_>>();
 
+    let modulo: usize = monkeys.iter().map(|m| m.test_divisible_by).product();
+
     let mut inspections = vec![0; monkeys.len()];
 
-    for _round in 0..20 {
+    for _round in 0..num_rounds {
         for idx in 0..monkeys.len() {
             let monkey = &monkeys[idx];
             let monkey_items = std::mem::replace(&mut monkeys_items[idx], VecDeque::default());
@@ -101,13 +103,14 @@ pub fn part_one(input: &str) -> Option<u32> {
                     Operation::Add(x) => item + x,
                     Operation::Mult(x) => item * x,
                     Operation::Square => item * item,
-                } / 3;
+                };
+                let item = (item / divisor) % modulo;
 
                 let target_idx = match item % monkey.test_divisible_by == 0 {
                     true => monkey.if_true,
                     false => monkey.if_false,
                 };
-                monkeys_items[target_idx as usize].push_back(item);
+                monkeys_items[target_idx].push_back(item);
             }
         }
     }
@@ -116,8 +119,12 @@ pub fn part_one(input: &str) -> Option<u32> {
     Some(inspections[0] * inspections[1])
 }
 
-pub fn part_two(input: &str) -> Option<u32> {
-    None
+pub fn part_one(input: &str) -> Option<usize> {
+    solve(input, 20, 3)
+}
+
+pub fn part_two(input: &str) -> Option<usize> {
+    solve(input, 10000, 1)
 }
 
 fn main() {
@@ -139,6 +146,6 @@ mod tests {
     #[test]
     fn test_part_two() {
         let input = advent_of_code::read_file("examples", 11);
-        assert_eq!(part_two(&input), None);
+        assert_eq!(part_two(&input), Some(2713310158));
     }
 }

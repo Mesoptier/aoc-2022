@@ -1,5 +1,3 @@
-use std::collections::VecDeque;
-
 use nom::{
     branch::alt,
     bytes::complete::tag,
@@ -84,7 +82,7 @@ fn solve(input: &str, num_rounds: usize, divisor: usize) -> Option<usize> {
 
     let mut monkeys_items = monkeys
         .iter()
-        .map(|m| VecDeque::from_iter(m.starting_items.iter().cloned()))
+        .map(|m| m.starting_items.clone())
         .collect::<Vec<_>>();
 
     let modulo: usize = monkeys.iter().map(|m| m.test_divisible_by).product();
@@ -94,7 +92,7 @@ fn solve(input: &str, num_rounds: usize, divisor: usize) -> Option<usize> {
     for _round in 0..num_rounds {
         for idx in 0..monkeys.len() {
             let monkey = &monkeys[idx];
-            let monkey_items = std::mem::replace(&mut monkeys_items[idx], VecDeque::default());
+            let monkey_items = std::mem::replace(&mut monkeys_items[idx], Vec::new());
 
             for item in monkey_items {
                 inspections[idx] += 1;
@@ -110,7 +108,7 @@ fn solve(input: &str, num_rounds: usize, divisor: usize) -> Option<usize> {
                     true => monkey.if_true,
                     false => monkey.if_false,
                 };
-                monkeys_items[target_idx].push_back(item);
+                monkeys_items[target_idx].push(item);
             }
         }
     }

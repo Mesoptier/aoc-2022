@@ -50,73 +50,8 @@ impl PartialOrd for State {
     }
 }
 
-pub fn part_one(input: &str) -> Option<usize> {
+fn solve(input: &str) -> (usize, usize) {
     let (grid, start_point, end_point) = parse_input(input);
-
-    let width = grid[0].len();
-    let height = grid.len();
-
-    let point_to_idx = |(x, y): (usize, usize)| width * y + x;
-
-    let valid_neighbors = |(x, y): (usize, usize)| {
-        let mut neighbors = vec![];
-        if 0 < x {
-            neighbors.push((x - 1, y));
-        }
-        if y > 0 {
-            neighbors.push((x, y - 1));
-        }
-        if x < width - 1 {
-            neighbors.push((x + 1, y));
-        }
-        if y < height - 1 {
-            neighbors.push((x, y + 1));
-        }
-        neighbors
-    };
-
-    let mut dist = vec![usize::MAX; width * height];
-    let mut heap = BinaryHeap::new();
-
-    dist[point_to_idx(start_point)] = 0;
-    heap.push(State {
-        cost: 0,
-        point: start_point,
-    });
-
-    while let Some(State { cost, point }) = heap.pop() {
-        if point == end_point {
-            return Some(cost);
-        }
-
-        if cost > dist[point_to_idx(point)] {
-            continue;
-        }
-
-        let cur_height = grid[point.1][point.0];
-
-        for next_point in valid_neighbors(point) {
-            let next_height = grid[next_point.1][next_point.0];
-            if next_height > cur_height + 1 {
-                continue;
-            }
-
-            let next_cost = cost + 1;
-            if next_cost < dist[point_to_idx(next_point)] {
-                heap.push(State {
-                    cost: next_cost,
-                    point: next_point,
-                });
-                dist[point_to_idx(next_point)] = next_cost;
-            }
-        }
-    }
-
-    None
-}
-
-pub fn part_two(input: &str) -> Option<usize> {
-    let (grid, _, end_point) = parse_input(input);
 
     let width = grid[0].len();
     let height = grid.len();
@@ -149,13 +84,18 @@ pub fn part_two(input: &str) -> Option<usize> {
         point: end_point,
     });
 
+    let mut start_cost = usize::MAX;
     let mut min_cost = usize::MAX;
 
     while let Some(State { cost, point }) = heap.pop() {
         let cur_height = grid[point.1][point.0];
 
         if cur_height == 0 {
-            // Reached a starting square
+            if point == start_point {
+                start_cost = cost;
+            }
+
+            // Reached a potential starting square
             min_cost = min_cost.min(cost);
             continue;
         }
@@ -181,7 +121,15 @@ pub fn part_two(input: &str) -> Option<usize> {
         }
     }
 
-    Some(min_cost)
+    (start_cost, min_cost)
+}
+
+pub fn part_one(input: &str) -> Option<usize> {
+    Some(solve(input).0)
+}
+
+pub fn part_two(input: &str) -> Option<usize> {
+    Some(solve(input).1)
 }
 
 fn main() {

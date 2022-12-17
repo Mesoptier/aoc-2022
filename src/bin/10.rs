@@ -1,11 +1,9 @@
-use std::str::FromStr;
-
+use advent_of_code::helpers::parse_signed_int;
 use nom::{
     branch::alt,
     bytes::complete::tag,
-    character::complete::digit1,
-    combinator::{map, map_res, opt, recognize, value},
-    sequence::{preceded, tuple},
+    combinator::{map, value},
+    sequence::preceded,
     IResult,
 };
 
@@ -20,13 +18,6 @@ fn parse_instruction(input: &str) -> IResult<&str, Instruction> {
         value(Instruction::Noop, tag("noop")),
         map(preceded(tag("addx "), parse_signed_int), Instruction::AddX),
     ))(input)
-}
-
-fn parse_signed_int<T>(input: &str) -> IResult<&str, T>
-where
-    T: FromStr,
-{
-    map_res(recognize(tuple((opt(tag("-")), digit1))), str::parse::<T>)(input)
 }
 
 pub fn part_one(input: &str) -> Option<i32> {

@@ -21,7 +21,7 @@ fn parse_input(input: &str) -> IResult<&str, Vec<Vec<(usize, usize)>>> {
     )(input)
 }
 
-pub fn part_one(input: &str) -> Option<u32> {
+fn solve(input: &str) -> (Option<u32>, Option<u32>) {
     let (_, traces) = parse_input(input).unwrap();
 
     let mut grid = [[false; 1000]; 500];
@@ -47,6 +47,10 @@ pub fn part_one(input: &str) -> Option<u32> {
         }
     }
 
+    let y_floor = y_abyss + 2;
+
+    let mut result_part1 = None;
+
     for unit in 0.. {
         let mut x = 500;
         let mut y = 0;
@@ -60,12 +64,21 @@ pub fn part_one(input: &str) -> Option<u32> {
                 x = x + 1;
                 y = y + 1;
             } else {
+                if y == 0 && x == 500 {
+                    return (result_part1, Some(unit + 1));
+                }
+
                 grid[y][x] = true;
                 break;
             }
 
-            if y >= y_abyss {
-                return Some(unit);
+            if result_part1 == None && y >= y_abyss {
+                result_part1 = Some(unit);
+            }
+
+            if y == y_floor - 1 {
+                grid[y][x] = true;
+                break;
             }
         }
     }
@@ -73,8 +86,12 @@ pub fn part_one(input: &str) -> Option<u32> {
     unreachable!()
 }
 
+pub fn part_one(input: &str) -> Option<u32> {
+    solve(input).0
+}
+
 pub fn part_two(input: &str) -> Option<u32> {
-    None
+    solve(input).1
 }
 
 fn main() {
@@ -96,6 +113,6 @@ mod tests {
     #[test]
     fn test_part_two() {
         let input = advent_of_code::read_file("examples", 14);
-        assert_eq!(part_two(&input), None);
+        assert_eq!(part_two(&input), Some(93));
     }
 }

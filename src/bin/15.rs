@@ -62,8 +62,46 @@ pub fn part_one(input: &str) -> Option<u32> {
     solve_part_one(input, 2000000)
 }
 
-pub fn part_two(input: &str) -> Option<u32> {
+pub fn solve_part_two(input: &str, size: u32) -> Option<u64> {
+    let (_, input) = parse_input(input).unwrap();
+    let sensors: Vec<((u32, u32), u32)> = input
+        .into_iter()
+        .map(|((x, y), (bx, by))| {
+            let range = x.abs_diff(bx) + y.abs_diff(by);
+            ((x as u32, y as u32), range)
+        })
+        .collect();
+
+    for y in 0..=size {
+        let mut x_intervals = vec![];
+
+        for &((sx, sy), range) in &sensors {
+            let y_diff = y.abs_diff(sy);
+            if y_diff <= range {
+                let interval_size = range - y_diff;
+                x_intervals.push((
+                    sx.saturating_sub(interval_size),
+                    (sx + interval_size).min(size),
+                ));
+            }
+        }
+
+        x_intervals.sort();
+
+        let mut x = 0;
+        for (x_min, x_max) in x_intervals {
+            if x < x_min {
+                return Some((x as u64) * 4000000 + y as u64);
+            }
+            x = x.max(x_max + 1);
+        }
+    }
+
     None
+}
+
+pub fn part_two(input: &str) -> Option<u64> {
+    solve_part_two(input, 4000000)
 }
 
 fn main() {
@@ -85,6 +123,6 @@ mod tests {
     #[test]
     fn test_part_two() {
         let input = advent_of_code::read_file("examples", 15);
-        assert_eq!(part_two(&input), None);
+        assert_eq!(solve_part_two(&input, 20), Some(56000011));
     }
 }

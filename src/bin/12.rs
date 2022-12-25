@@ -84,20 +84,22 @@ fn solve(input: &str) -> (usize, usize) {
         point: end_point,
     });
 
-    let mut start_cost = usize::MAX;
+    let mut start_cost = None;
     let mut min_cost = usize::MAX;
 
     while let Some(State { cost, point }) = heap.pop() {
         let cur_height = grid[point.1][point.0];
 
         if cur_height == 0 {
-            if point == start_point {
-                start_cost = cost;
-            }
-
             // Reached a potential starting square
             min_cost = min_cost.min(cost);
-            continue;
+
+            if start_cost.is_some() {
+                continue;
+            }
+            if point == start_point {
+                start_cost = Some(cost);
+            }
         }
 
         if cost > dist[point_to_idx(point)] {
@@ -106,7 +108,7 @@ fn solve(input: &str) -> (usize, usize) {
 
         for next_point in valid_neighbors(point) {
             let next_height = grid[next_point.1][next_point.0];
-            if next_height < cur_height - 1 {
+            if next_height + 1 < cur_height {
                 continue;
             }
 
@@ -121,7 +123,7 @@ fn solve(input: &str) -> (usize, usize) {
         }
     }
 
-    (start_cost, min_cost)
+    (start_cost.unwrap(), min_cost)
 }
 
 pub fn part_one(input: &str) -> Option<usize> {

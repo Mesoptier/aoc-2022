@@ -7,6 +7,7 @@ use nom::{
     sequence::{delimited, preceded, terminated, tuple},
     IResult,
 };
+use num::Integer;
 
 type Costs = [u32; 3];
 type Blueprint = [Costs; 4];
@@ -57,57 +58,50 @@ struct State {
 }
 
 impl State {
-    fn next_time_step(&self) -> Self {
-        Self {
-            time: self.time + 1,
-            robots: self.robots,
-            resources: [
-                self.resources[0] + self.robots[0],
-                self.resources[1] + self.robots[1],
-                self.resources[2] + self.robots[2],
-                self.resources[3] + self.robots[3],
-            ],
+    fn step_time(&mut self, time_steps: u32) {
+        self.time += time_steps;
+        for idx in 0..4 {
+            self.resources[idx] += self.robots[idx] * time_steps;
         }
     }
 
-    fn spend(&self, costs: Costs) -> Option<Self> {
-        if !self.will_be_affordable(costs) {
-            return None;
+    fn build_robot(&self, robot_idx: usize, costs: Costs) -> Option<Self> {
+        let mut t = 0;
+
+        for idx in (0..3).rev() {
+            if self.resources[idx] >= costs[idx] {
+                // Already have enough of this resource
+                continue;
+            }
+            if self.robots[idx] == 0 {
+                assert_eq!(self.resources[idx], 0);
+
+                // No robot that produces this resource
+                return None;
+            }
+            let diff_resources = costs[idx] - self.resources[idx];
+            t = t.max(Integer::div_ceil(&diff_resources, &self.robots[idx]));
         }
 
         let mut state = *self;
-        while !state.is_affordable(costs) {
-            state = state.next_time_step();
-        }
 
-        Some(Self {
-            resources: [
-                state.resources[0] - costs[0],
-                state.resources[1] - costs[1],
-                state.resources[2] - costs[2],
-                state.resources[3],
-            ],
-            ..state
-        })
-    }
+        // Gather required resources
+        state.step_time(t);
 
-    fn will_be_affordable(&self, costs: Costs) -> bool {
-        assert!(self.robots[0] > 0);
-        if costs[1] > 0 && self.robots[1] == 0 {
-            assert_eq!(self.resources[1], 0);
-            return false;
+        // Build the robot
+        for idx in 0..3 {
+            state.resources[idx] -= costs[idx];
         }
-        if costs[2] > 0 && self.robots[2] == 0 {
-            assert_eq!(self.resources[2], 0);
-            return false;
-        }
-        true
-    }
+        assert!(
+            t == 0
+                || state.resources[0] < costs[0]
+                || state.resources[1] < costs[1]
+                || state.resources[2] < costs[2]
+        );
+        state.step_time(1);
+        state.robots[robot_idx] += 1;
 
-    fn is_affordable(&self, costs: Costs) -> bool {
-        self.resources[0] >= costs[0]
-            && self.resources[1] >= costs[1]
-            && self.resources[2] >= costs[2]
+        Some(state)
     }
 }
 
@@ -121,22 +115,17 @@ fn eval_blueprint(blueprint: Blueprint, max_time: u32) -> u32 {
     let branch = |state: State| -> Vec<State> {
         let mut new_states = vec![];
 
-        new_states.extend((0..4).rev().filter_map(|idx| {
+        // Build robots, prioritizing those that produce higher-tier resources (i.e. geodes)
+        new_states.extend((0..4).rev().filter_map(|robot_idx| {
             state
-                .spend(blueprint[idx])
-                .map(|new_state| {
-                    let mut new_state = new_state.next_time_step();
-                    new_state.robots[idx] += 1;
-                    new_state
-                })
+                .build_robot(robot_idx, blueprint[robot_idx])
                 .filter(|new_state| new_state.time <= max_time)
         }));
 
+        // If no more robots can be built from this state, just run through to the end 
         if new_states.is_empty() {
-            let mut new_state = state.next_time_step();
-            while new_state.time < max_time {
-                new_state = new_state.next_time_step();
-            }
+            let mut new_state = state;
+            new_state.step_time(max_time - state.time);
             new_states.push(new_state);
         }
 

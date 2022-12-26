@@ -1,4 +1,4 @@
-use hashbrown::{HashMap, hash_map::Entry};
+use hashbrown::HashMap;
 use nom::{
     branch::alt,
     bytes::complete::tag,
@@ -67,7 +67,11 @@ pub fn part_one(input: &str) -> Option<usize> {
     let monkeys = parse_input(input).unwrap().1;
     let monkeys = HashMap::from_iter(monkeys);
 
-    fn eval(name: String, values: &mut HashMap<String, usize>, monkeys: &HashMap<String, Operation>) -> usize {
+    fn eval(
+        name: String,
+        values: &mut HashMap<String, usize>,
+        monkeys: &HashMap<String, Operation>,
+    ) -> usize {
         if let Some(&value) = values.get(&name) {
             return value;
         }

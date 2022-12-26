@@ -67,16 +67,8 @@ pub fn part_one(input: &str) -> Option<usize> {
     let monkeys = parse_input(input).unwrap().1;
     let monkeys = HashMap::from_iter(monkeys);
 
-    fn eval(
-        name: String,
-        values: &mut HashMap<String, usize>,
-        monkeys: &HashMap<String, Operation>,
-    ) -> usize {
-        if let Some(&value) = values.get(&name) {
-            return value;
-        }
-
-        let mut eval = |name: String| eval(name, values, monkeys);
+    fn eval(name: String, monkeys: &HashMap<String, Operation>) -> usize {
+        let eval = |name: String| eval(name, monkeys);
         let value = match monkeys.get(&name).unwrap().clone() {
             Operation::Number(value) => value,
             Operation::Add(a, b) => eval(a) + eval(b),
@@ -84,12 +76,10 @@ pub fn part_one(input: &str) -> Option<usize> {
             Operation::Mul(a, b) => eval(a) * eval(b),
             Operation::Div(a, b) => eval(a) / eval(b),
         };
-        values.insert(name, value);
         value
     }
 
-    let mut values: HashMap<String, usize> = HashMap::new();
-    Some(eval("root".to_string(), &mut values, &monkeys))
+    Some(eval("root".to_string(), &monkeys))
 }
 
 pub fn part_two(input: &str) -> Option<usize> {

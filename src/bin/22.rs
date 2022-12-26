@@ -220,67 +220,159 @@ fn solve_part_one(input: &str, region_size: usize) -> Option<usize> {
     // TODO: find a non-hardcoded way of computing these adjacencies
     let region_adjacencies: HashMap<(usize, usize, Direction), (usize, usize, Direction)> =
         if region_size == 4 {
+            // ..1.
+            // 234.
+            // ..56
             HashMap::from([
+                // 1
                 ((0, 2, Right), (0, 2, Right)),
                 ((0, 2, Down), (1, 2, Down)),
                 ((0, 2, Left), (0, 2, Left)),
                 ((0, 2, Up), (2, 2, Up)),
-                //
+                // 2
                 ((1, 0, Right), (1, 1, Right)),
                 ((1, 0, Down), (1, 0, Down)),
                 ((1, 0, Left), (1, 2, Left)),
                 ((1, 0, Up), (1, 0, Up)),
-                //
+                // 3
                 ((1, 1, Right), (1, 2, Right)),
                 ((1, 1, Down), (1, 1, Down)),
                 ((1, 1, Left), (1, 0, Left)),
                 ((1, 1, Up), (1, 1, Up)),
-                //
+                // 4
                 ((1, 2, Right), (1, 0, Right)),
                 ((1, 2, Down), (2, 2, Down)),
                 ((1, 2, Left), (1, 1, Left)),
                 ((1, 2, Up), (0, 2, Up)),
-                //
+                // 5
                 ((2, 2, Right), (2, 3, Right)),
                 ((2, 2, Down), (0, 2, Down)),
                 ((2, 2, Left), (2, 3, Left)),
                 ((2, 2, Up), (1, 2, Up)),
-                //
+                // 6
                 ((2, 3, Right), (2, 2, Right)),
                 ((2, 3, Down), (2, 3, Down)),
                 ((2, 3, Left), (2, 2, Left)),
                 ((2, 3, Up), (2, 3, Up)),
             ])
         } else {
+            // .12
+            // .3.
+            // 45.
+            // 6..
             HashMap::from([
+                // 1
                 ((0, 1, Right), (0, 2, Right)),
                 ((0, 1, Down), (1, 1, Down)),
                 ((0, 1, Left), (0, 2, Left)),
                 ((0, 1, Up), (2, 1, Up)),
-                //
+                // 2
                 ((0, 2, Right), (0, 1, Right)),
                 ((0, 2, Down), (0, 2, Down)),
                 ((0, 2, Left), (0, 1, Left)),
                 ((0, 2, Up), (0, 2, Up)),
-                //
+                // 3
                 ((1, 1, Right), (1, 1, Right)),
                 ((1, 1, Down), (2, 1, Down)),
                 ((1, 1, Left), (1, 1, Left)),
                 ((1, 1, Up), (0, 1, Up)),
-                //
+                // 4
                 ((2, 0, Right), (2, 1, Right)),
                 ((2, 0, Down), (3, 0, Down)),
                 ((2, 0, Left), (2, 1, Left)),
                 ((2, 0, Up), (3, 0, Up)),
-                //
+                // 5
                 ((2, 1, Right), (2, 0, Right)),
                 ((2, 1, Down), (0, 1, Down)),
                 ((2, 1, Left), (2, 0, Left)),
                 ((2, 1, Up), (1, 1, Up)),
-                //
+                // 6
                 ((3, 0, Right), (3, 0, Right)),
                 ((3, 0, Down), (2, 0, Down)),
                 ((3, 0, Left), (3, 0, Left)),
+                ((3, 0, Up), (2, 0, Up)),
+            ])
+        };
+
+    solve(input, region_size, region_adjacencies)
+}
+
+fn solve_part_two(input: &str, region_size: usize) -> Option<usize> {
+    use Direction::*;
+
+    // TODO: find a non-hardcoded way of computing these adjacencies
+    let region_adjacencies: HashMap<(usize, usize, Direction), (usize, usize, Direction)> =
+        if region_size == 4 {
+            // ..1.
+            // 234.
+            // ..56
+            HashMap::from([
+                // 1
+                ((0, 2, Right), (2, 3, Left)),
+                ((0, 2, Down), (1, 2, Down)),
+                ((0, 2, Left), (1, 1, Down)),
+                ((0, 2, Up), (1, 0, Down)),
+                // 2
+                ((1, 0, Right), (1, 1, Right)),
+                ((1, 0, Down), (2, 2, Up)),
+                ((1, 0, Left), (2, 3, Up)),
+                ((1, 0, Up), (1, 0, Down)),
+                // 3
+                ((1, 1, Right), (1, 2, Right)),
+                ((1, 1, Up), (0, 2, Right)),
+                ((1, 1, Left), (1, 0, Left)),
+                ((1, 1, Up), (0, 2, Right)),
+                // 4
+                ((1, 2, Right), (2, 3, Down)),
+                ((1, 2, Down), (2, 2, Down)),
+                ((1, 2, Left), (1, 1, Left)),
+                ((1, 2, Up), (0, 2, Up)),
+                // 5
+                ((2, 2, Right), (2, 3, Right)),
+                ((2, 2, Down), (1, 0, Up)),
+                ((2, 2, Left), (1, 1, Up)),
+                ((2, 2, Up), (1, 2, Up)),
+                // 6
+                ((2, 3, Right), (0, 2, Left)),
+                ((2, 3, Down), (1, 0, Right)),
+                ((2, 3, Left), (2, 2, Left)),
+                ((2, 3, Up), (1, 2, Left)),
+            ])
+        } else {
+            // .12
+            // .3.
+            // 45.
+            // 6..
+            HashMap::from([
+                // 1
+                ((0, 1, Right), (0, 2, Right)),
+                ((0, 1, Down), (1, 1, Down)),
+                ((0, 1, Left), (2, 0, Right)),
+                ((0, 1, Up), (3, 0, Right)),
+                // 2
+                ((0, 2, Right), (2, 1, Left)),
+                ((0, 2, Down), (1, 1, Left)),
+                ((0, 2, Left), (0, 1, Left)),
+                ((0, 2, Up), (3, 0, Up)),
+                // 3
+                ((1, 1, Right), (0, 2, Up)),
+                ((1, 1, Down), (2, 1, Down)),
+                ((1, 1, Left), (2, 0, Down)),
+                ((1, 1, Up), (0, 1, Up)),
+                // 4
+                ((2, 0, Right), (2, 1, Right)),
+                ((2, 0, Down), (3, 0, Down)),
+                ((2, 0, Left), (0, 1, Right)),
+                ((2, 0, Up), (1, 1, Right)),
+                // 5
+                ((2, 1, Right), (0, 2, Left)),
+                ((2, 1, Down), (3, 0, Left)),
+                ((2, 1, Left), (2, 0, Left)),
+                ((2, 1, Up), (1, 1, Up)),
+                // 6
+                ((3, 0, Right), (2, 1, Up)),
+                ((3, 0, Down), (0, 2, Down)),
+                ((3, 0, Left), (0, 1, Down)),
                 ((3, 0, Up), (2, 0, Up)),
             ])
         };
@@ -292,8 +384,8 @@ pub fn part_one(input: &str) -> Option<usize> {
     solve_part_one(input, 50)
 }
 
-pub fn part_two(input: &str) -> Option<u32> {
-    None
+pub fn part_two(input: &str) -> Option<usize> {
+    solve_part_two(input, 50)
 }
 
 fn main() {
@@ -315,6 +407,6 @@ mod tests {
     #[test]
     fn test_part_two() {
         let input = advent_of_code::read_file("examples", 22);
-        assert_eq!(part_two(&input), None);
+        assert_eq!(solve_part_two(&input, 4), Some(5031));
     }
 }
